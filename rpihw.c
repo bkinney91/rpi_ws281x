@@ -398,17 +398,24 @@ const rpi_hw_t *rpi_hw_detect(void)
     // On ARM64, read revision from /proc/device-tree as it is not shown in
     // /proc/cpuinfo
     FILE *f = fopen("/proc/device-tree/system/linux,revision", "r");
-    if (!f)
+    //If the file is found, we know it is a rpi
+    if (f)
     {
-        return NULL;
+        size_t read = fread(&rev, sizeof(uint32_t), 1, f);
+        if (read != sizeof(uint32_t))
+            goto done;
+        #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            rev = bswap_32(rev);  // linux,revision appears to be in big endian
+        #endif
     }
-    size_t read = fread(&rev, sizeof(uint32_t), 1, f);
-    if (read != sizeof(uint32_t))
-        goto done;
-    #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-        rev = bswap_32(rev);  // linux,revision appears to be in big endian
-    #endif
-
+    //If it is not recognized, we are going to assume it is a jetson nano
+    else 
+    {
+        //Set it to the same profile as the pi 4 (same architecture as jetson)
+        rev = 0xC03111;
+    }
+    
+    
     for (i = 0; i < (sizeof(rpi_hw_info) / sizeof(rpi_hw_info[0])); i++)
     {
         uint32_t hwver = rpi_hw_info[i].hwver;
