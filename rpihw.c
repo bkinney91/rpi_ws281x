@@ -391,10 +391,20 @@ static const rpi_hw_t rpi_hw_info[] = {
 const rpi_hw_t *rpi_hw_detect(void)
 {
     const rpi_hw_t *result = NULL;
-    uint32_t rev;
     unsigned i;
 
-#ifdef __aarch64__
+ 
+    for (i = 0; i < (sizeof(rpi_hw_info) / sizeof(rpi_hw_info[0])); i++)
+    {
+        uint32_t hwver = rpi_hw_info[i].hwver;
+        if (0xC03111 == hwver)
+        {
+            result = &rpi_hw_info[i];
+            return result;
+        }
+    }
+    return NULL;
+/*#ifdef __aarch64__
     // On ARM64, read revision from /proc/device-tree as it is not shown in
     // /proc/cpuinfo
     FILE *f = fopen("/proc/device-tree/system/linux,revision", "r");
@@ -472,9 +482,11 @@ const rpi_hw_t *rpi_hw_detect(void)
         }
     }
 #endif
+
 done:
     fclose(f);
 
     return result;
+*/
 }
 
